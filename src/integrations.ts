@@ -23,9 +23,14 @@ export class MockClickUpGateway implements ClickUpGateway {
 
 export class ProductionClickUpGateway implements ClickUpGateway {
   previewTask(_title: string, _description: string, _destinationList?: string): ClickUpTaskPreview {
+    void _title
+    void _description
+    void _destinationList
     throw new Error('Production ClickUp is not configured. Request denied.')
   }
   createTask(_preview: ClickUpTaskPreview, _confirmed: boolean): { id: string; simulated: boolean } {
+    void _preview
+    void _confirmed
     throw new Error('Production ClickUp is not configured. Request denied.')
   }
 }
