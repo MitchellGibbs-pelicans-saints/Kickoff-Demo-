@@ -13,6 +13,13 @@ const rules: RoutingRule[] = [
   { department: 'Finance', terms: ['revenue', 'cost', 'budget', 'financial', 'savings', 'forecast', 'invoice'] },
 ]
 
+const stemTerms = new Set(['promot', 'advertis'])
+const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const matchesTerm = (text: string, term: string) => {
+  const suffix = stemTerms.has(term) ? '\\w*' : ''
+  return new RegExp(`(^|\\W)${escapePattern(term)}${suffix}(?=$|\\W)`).test(text)
+}
+
 export interface RoutingRecommendation {
   primary: Department
   supporting: Department[]
@@ -23,7 +30,7 @@ export interface RoutingRecommendation {
 export function routeIdea(text: string): RoutingRecommendation {
   const normalized = text.toLowerCase()
   const scored = rules.map((rule, order) => {
-    const signals = rule.terms.filter((term) => normalized.includes(term))
+    const signals = rule.terms.filter((term) => matchesTerm(normalized, term))
     return { department: rule.department, score: signals.length, signals, order }
   }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score || a.order - b.order)
 

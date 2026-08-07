@@ -15,7 +15,7 @@ describe('demo authorization', () => {
     const executive = seedUsers.find((user) => user.id === 'u4')!
     const result = executiveProposals(executive, seedProposals)
     expect(result.every((proposal) => [proposal.primaryDepartment, ...proposal.supportingDepartments].some((department) => executive.executiveScopes.includes(department)))).toBe(true)
-    expect(result.map((proposal) => proposal.id)).toEqual(['p1', 'p3'])
+    expect(result.map((proposal) => proposal.id)).toEqual(['p1', 'p3', 'p6'])
   })
 
   it('shows approvers only their assigned department queue', () => {
