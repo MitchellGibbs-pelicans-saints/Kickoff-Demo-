@@ -16,7 +16,7 @@ const rules: RoutingRule[] = [
 const stemTerms = new Set(['promot', 'advertis'])
 const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const matchesTerm = (text: string, term: string) => {
-  const suffix = stemTerms.has(term) ? '\\w*' : ''
+  const suffix = stemTerms.has(term) ? '\\w*' : '(?:s|es)?'
   return new RegExp(`(^|\\W)${escapePattern(term)}${suffix}(?=$|\\W)`).test(text)
 }
 
