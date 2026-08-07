@@ -4,12 +4,12 @@ import { buildApprovalStages } from './approval'
 export const departments = ['Marketing', 'Operations', 'Partnerships', 'Technology', 'Finance', 'People Operations', 'Ticketing and Sales', 'Business Intelligence'] as const
 
 export const seedUsers: User[] = [
-  { id: 'u1', name: 'Mitch Gibbs', email: 'mitch.gibbs@pelicans.com', title: 'Demo administrator', roles: ['employee', 'admin'], departmentScopes: [], executiveScopes: [], active: true },
-  { id: 'u2', name: 'Avery Chen', email: 'avery.chen@example.demo', title: 'Guest services coordinator', roles: ['employee'], departmentScopes: [], executiveScopes: [], active: true },
-  { id: 'u3', name: 'Jordan Brooks', email: 'jordan.brooks@example.demo', title: 'Operations reviewer', roles: ['employee', 'approver'], departmentScopes: ['Operations'], executiveScopes: [], active: true },
-  { id: 'u4', name: 'Morgan Reed', email: 'morgan.reed@example.demo', title: 'Strategy executive', roles: ['employee', 'executive'], departmentScopes: [], executiveScopes: ['Operations', 'Marketing'], active: true },
+  { id: 'u1', name: 'Gayle Benson', email: 'gayle.benson@example.demo', title: 'Mock initial administrator', roles: ['employee', 'admin'], departmentScopes: [], executiveScopes: [], active: true },
+  { id: 'u2', name: 'Adrian Sanchez Jr', email: 'adrian.sanchez@example.demo', title: 'Motion Graphics Associate', roles: ['employee'], departmentScopes: [], executiveScopes: [], active: true },
+  { id: 'u3', name: 'Victoria Boldis', email: 'victoria.boldis@example.demo', title: 'Manager of Consumer Insights and Analytics', roles: ['employee', 'approver'], departmentScopes: ['Operations'], executiveScopes: [], active: true },
+  { id: 'u4', name: 'James Title', email: 'james.title@example.demo', title: 'Senior Director of Video Production', roles: ['employee', 'executive'], departmentScopes: [], executiveScopes: ['Operations', 'Marketing'], active: true },
   { id: 'u5', name: 'Riley Patel', email: 'riley.patel@example.demo', title: 'Partnerships reviewer', roles: ['employee', 'approver'], departmentScopes: ['Partnerships'], executiveScopes: [], active: true },
-  { id: 'u6', name: 'Taylor Monroe', email: 'taylor.monroe@example.demo', title: 'Revoked executive', roles: ['employee', 'executive'], departmentScopes: [], executiveScopes: ['Finance'], active: false },
+  { id: 'u6', name: 'Mitch Gibbs', email: 'mitch.gibbs@example.demo', title: 'Revoked executive', roles: ['employee', 'executive'], departmentScopes: [], executiveScopes: ['Finance'], active: false },
 ]
 
 export const seedProposals: Proposal[] = [
@@ -25,9 +25,9 @@ export const makeSeedState = (): DemoState => ({
   users: structuredClone(seedUsers),
   proposals: structuredClone(seedProposals.map((proposal) => ({ ...proposal, approvalStages: buildApprovalStages(proposal) }))),
   audit: [
-    { id: 'a1', actor: 'Mitch Gibbs', action: 'Assigned executive scope', target: 'Morgan Reed: Operations, Marketing', at: '2026-07-24 09:40' },
-    { id: 'a2', actor: 'Mitch Gibbs', action: 'Revoked demo access', target: 'Taylor Monroe', at: '2026-07-28 15:15' },
-    { id: 'a3', actor: 'Jordan Brooks', action: 'Requested changes', target: 'Vendor credential fast track', at: '2026-08-02 11:22' },
+    { id: 'a1', actor: 'Gayle Benson', action: 'Assigned executive scope', target: 'James Title: Operations, Marketing', at: '2026-07-24 09:40' },
+    { id: 'a2', actor: 'Gayle Benson', action: 'Revoked demo access', target: 'Mitch Gibbs', at: '2026-07-28 15:15' },
+    { id: 'a3', actor: 'Victoria Boldis', action: 'Requested changes', target: 'Vendor credential fast track', at: '2026-08-02 11:22' },
   ],
   currentUserId: 'u2',
 })
