@@ -12,7 +12,7 @@ import { buildApprovalStages, recordDecision, stagesFor } from './approval'
 import { routeIdea } from './routing'
 import type { DemoState, Department, Proposal, ProposalStatus, Role, User } from './types'
 
-const STORAGE_KEY = 'kickoff-demo-state-v2'
+const STORAGE_KEY = 'kickoff-demo-state-v3'
 const roleLabels: Record<Role, string> = { employee: 'Employee', approver: 'Department approver', executive: 'Executive', admin: 'Admin' }
 const statusTone: Record<ProposalStatus, string> = { Draft: 'neutral', 'Department review': 'warning', Approved: 'success', Rejected: 'danger', Pilot: 'info' }
 
