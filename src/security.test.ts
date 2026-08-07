@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { approvalProposals, canManageRoles, canOpenExecutive, executiveProposals } from './security'
 import { MockClickUpGateway, ProductionClickUpGateway, ProductionEntraAdapter } from './integrations'
 import { seedProposals, seedUsers } from './seed'
+import { routeIdea } from './routing'
 
 describe('demo authorization', () => {
   it('keeps an employee and proposer out of the executive dashboard', () => {
@@ -13,8 +14,8 @@ describe('demo authorization', () => {
   it('shows executives only approved proposals in assigned scopes', () => {
     const executive = seedUsers.find((user) => user.id === 'u4')!
     const result = executiveProposals(executive, seedProposals)
-    expect(result.every((proposal) => executive.executiveScopes.includes(proposal.primaryDepartment))).toBe(true)
-    expect(result.map((proposal) => proposal.id)).toEqual(['p1'])
+    expect(result.every((proposal) => [proposal.primaryDepartment, ...proposal.supportingDepartments].some((department) => executive.executiveScopes.includes(department)))).toBe(true)
+    expect(result.map((proposal) => proposal.id)).toEqual(['p1', 'p3'])
   })
 
   it('shows approvers only their assigned department queue', () => {
@@ -26,6 +27,14 @@ describe('demo authorization', () => {
     const revoked = seedUsers.find((user) => user.id === 'u6')!
     expect(canOpenExecutive(revoked)).toBe(false)
     expect(canManageRoles(seedUsers.find((user) => user.id === 'u3')!)).toBe(false)
+  })
+})
+
+describe('automatic routing', () => {
+  it('routes one idea to a primary and multiple supporting departments', () => {
+    const result = routeIdea('Create a mobile ticket offer for sponsors with revenue analytics')
+    expect(result.primary).toBe('Ticketing and Sales')
+    expect(result.supporting).toEqual(expect.arrayContaining(['Partnerships', 'Technology', 'Business Intelligence']))
   })
 })
 

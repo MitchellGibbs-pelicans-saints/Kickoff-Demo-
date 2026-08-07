@@ -1,6 +1,17 @@
 export type Role = 'employee' | 'approver' | 'executive' | 'admin'
 export type ProposalStatus = 'Draft' | 'Department review' | 'Approved' | 'Rejected' | 'Pilot'
-export type Department = 'Marketing' | 'Operations' | 'Partnerships' | 'Technology' | 'Finance' | 'People Operations'
+export type Department = 'Marketing' | 'Operations' | 'Partnerships' | 'Technology' | 'Finance' | 'People Operations' | 'Ticketing and Sales' | 'Business Intelligence'
+
+export interface ApprovalStage {
+  id: string
+  stage: string
+  department: Department
+  reviewer: string
+  enteredAt: string
+  completedAt?: string
+  elapsedDays: number
+  outcome: 'Completed' | 'In progress' | 'Approved' | 'Changes requested' | 'Rejected' | 'Pending'
+}
 
 export interface User {
   id: string
@@ -36,6 +47,7 @@ export interface Proposal {
   measures: string[]
   version: number
   updatedAt: string
+  approvalStages?: ApprovalStage[]
 }
 
 export interface AuditEvent {

@@ -6,8 +6,11 @@ A standalone, static demonstration of Kickoff, an internal idea launchpad that h
 
 - Guided employee idea intake with summary confirmation and focused routing questions
 - Preliminary proposal generation with routing, Business Impact Score, feasibility, pilot, roadmaps, and analytics metadata
+- Automatic primary and supporting department routing inferred from idea context, separate from submitter department
+- Approval-stage histories with entered/completed dates, elapsed time, outcomes, and fictional assigned reviewers
 - Department approval queues filtered by assigned department scope
 - Executive dashboards filtered to approved proposals in assigned scopes
+- Executive analytics for ideas created by submitter department, ideas received by routed department, and average approval-stage timing
 - Admin role assignment, access revocation, department routing, and mock audit history
 - Persona switching, browser-persisted state, and a reset-demo control
 - Clearly labeled simulated Microsoft Entra ID and ClickUp integrations

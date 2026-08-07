@@ -1,6 +1,7 @@
 import type { DemoState, Proposal, User } from './types'
+import { buildApprovalStages } from './approval'
 
-export const departments = ['Marketing', 'Operations', 'Partnerships', 'Technology', 'Finance', 'People Operations'] as const
+export const departments = ['Marketing', 'Operations', 'Partnerships', 'Technology', 'Finance', 'People Operations', 'Ticketing and Sales', 'Business Intelligence'] as const
 
 export const seedUsers: User[] = [
   { id: 'u1', name: 'Mitch Gibbs', email: 'mitch.gibbs@pelicans.com', title: 'Demo administrator', roles: ['employee', 'admin'], departmentScopes: [], executiveScopes: [], active: true },
@@ -22,7 +23,7 @@ export const seedProposals: Proposal[] = [
 
 export const makeSeedState = (): DemoState => ({
   users: structuredClone(seedUsers),
-  proposals: structuredClone(seedProposals),
+  proposals: structuredClone(seedProposals.map((proposal) => ({ ...proposal, approvalStages: buildApprovalStages(proposal) }))),
   audit: [
     { id: 'a1', actor: 'Mitch Gibbs', action: 'Assigned executive scope', target: 'Morgan Reed: Operations, Marketing', at: '2026-07-24 09:40' },
     { id: 'a2', actor: 'Mitch Gibbs', action: 'Revoked demo access', target: 'Taylor Monroe', at: '2026-07-28 15:15' },
