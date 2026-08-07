@@ -46,11 +46,11 @@ For a new repository, open **Settings → Pages → Build and deployment → Sou
 
 ## Demo personas
 
-- Avery Chen: employee
-- Jordan Brooks: Operations department approver
-- Morgan Reed: executive scoped to Operations and Marketing
-- Mitch Gibbs: mock initial admin
-- Taylor Monroe: revoked executive demonstrating immediate access loss
+- Adrian Sanchez Jr: Motion Graphics Associate
+- Victoria Boldis: Manager of Consumer Insights and Analytics
+- James Title: Senior Director of Video Production
+- Gayle Benson: mock initial admin
+- Mitch Gibbs: revoked executive demonstrating immediate access loss
 
 ## Production security boundary
 
