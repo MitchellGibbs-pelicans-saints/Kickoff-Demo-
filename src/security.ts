@@ -32,10 +32,12 @@ export const canReviewProposal = (user: User, proposal: Proposal, fallbackReview
     : isRoleActive(user, 'approver') && (proposal.responsibleReviewerId === user.id || routedDepartments(proposal).some((department) => user.departmentScopes.includes(department))))
 )
 
-export const canViewProposal = (user: User, proposal: Proposal, fallbackReviewerIds: string[] = []) => user.active && sensitivityAllowed(user, proposal.sensitivity) && (
+export const canViewProposal = (user: User, proposal: Proposal, fallbackReviewerIds: string[] = []) => user.active && (
   proposal.submitterId === user.id ||
-  canReviewProposal(user, proposal, fallbackReviewerIds) ||
-  (isRoleActive(user, 'executive') && ['Approved', 'Pilot', 'Closed'].includes(proposal.status) && routedDepartments(proposal).some((department) => user.executiveScopes.includes(department)))
+  (sensitivityAllowed(user, proposal.sensitivity) && (
+    canReviewProposal(user, proposal, fallbackReviewerIds) ||
+    (isRoleActive(user, 'executive') && ['Approved', 'Pilot', 'Closed'].includes(proposal.status) && routedDepartments(proposal).some((department) => user.executiveScopes.includes(department)))
+  ))
 )
 
 export const visibleFeedback = (user: User, proposal: Proposal, fallbackReviewerIds: string[] = []): FeedbackItem[] => {
