@@ -64,9 +64,11 @@ describe('evidence-based routing', () => {
   })
 
   it('honors administrator changes without a code deployment', () => {
-    const config = { ...routingConfig, confidenceThreshold: 99 }
-    const decision = routeIdea('Improve venue entry security workflow', config, seedUsers)
+    const permissive = { ...routingConfig, confidenceThreshold: 40 }
+    const restrictive = { ...routingConfig, confidenceThreshold: 99 }
+    expect(routeIdea('Improve venue entry', permissive, seedUsers).primaryDepartment).toBe('Operations')
+    const decision = routeIdea('Improve venue entry', restrictive, seedUsers)
     expect(decision.primaryDepartment).toBeNull()
-    expect(decision.reviewQueue).toBe(config.humanReviewQueue)
+    expect(decision.reviewQueue).toBe(restrictive.humanReviewQueue)
   })
 })
