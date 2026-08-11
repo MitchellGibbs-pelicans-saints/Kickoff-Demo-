@@ -4,7 +4,7 @@ import { buildApprovalStages } from './approval'
 export const departments = ['Marketing', 'Operations', 'Partnerships', 'Technology', 'Finance', 'People Operations', 'Ticketing and Sales', 'Business Intelligence'] as const
 
 export const routingConfig: RoutingConfig = {
-  version: 'demo-routing-2026.08.11', confidenceThreshold: 55, collaboratorThreshold: 25, staleAfterDays: 180,
+  version: 'demo-routing-2026.08.11', confidenceThreshold: 55, ambiguityMargin: 10, collaboratorThreshold: 25, staleAfterDays: 180,
   humanReviewQueue: 'Human routing review', fallbackReviewerIds: ['u1'],
   weights: { remit: 20, responsibility: 20, skill: 15, subject: 30, dependency: 15 },
   departments: [
