@@ -56,9 +56,10 @@ export function routeIdea(
   if (best) {
     best.subjectSignals.forEach((label, index) => evidence.push({ id: `subject-${index}`, kind: 'subject', label, source: `${best.department.department} subject catalog`, verifiedAt: now, weight: config.weights.subject }))
     if (best.remitSignals.length) evidence.push({ id: 'remit-0', kind: 'remit', label: best.department.remit, source: 'Administrator-maintained department remit', verifiedAt: now, weight: config.weights.remit })
-    best.reviewer?.responsibilities.forEach((label, index) => evidence.push({ id: `responsibility-${index}`, kind: 'responsibility', label, source: `${best.reviewer.user.name} responsibility evidence`, verifiedAt: best.reviewer.user.evidenceVerifiedAt, weight: config.weights.responsibility }))
-    best.reviewer?.skills.forEach((label, index) => evidence.push({ id: `skill-${index}`, kind: 'skill', label, source: `${best.reviewer.user.name} skill evidence`, verifiedAt: best.reviewer.user.evidenceVerifiedAt, weight: config.weights.skill }))
-    if (best.reviewer) evidence.push({ id: 'permission-0', kind: 'permission', label: `${best.reviewer.user.name} passed active-role, department-scope and sensitivity checks`, source: 'Server-verified authorization context (simulated)', verifiedAt: now, weight: 0 })
+    const reviewer = best.reviewer
+    reviewer?.responsibilities.forEach((label, index) => evidence.push({ id: `responsibility-${index}`, kind: 'responsibility', label, source: `${reviewer.user.name} responsibility evidence`, verifiedAt: reviewer.user.evidenceVerifiedAt, weight: config.weights.responsibility }))
+    reviewer?.skills.forEach((label, index) => evidence.push({ id: `skill-${index}`, kind: 'skill', label, source: `${reviewer.user.name} skill evidence`, verifiedAt: reviewer.user.evidenceVerifiedAt, weight: config.weights.skill }))
+    if (reviewer) evidence.push({ id: 'permission-0', kind: 'permission', label: `${reviewer.user.name} passed active-role, department-scope and sensitivity checks`, source: 'Server-verified authorization context (simulated)', verifiedAt: now, weight: 0 })
     collaboratingDepartments.forEach((label, index) => evidence.push({ id: `dependency-${index}`, kind: 'dependency', label, source: 'Cross-department dependency score', verifiedAt: now, weight: config.weights.dependency }))
     evidence.push({ id: 'rule-0', kind: 'rule', label: config.version, source: 'Administrator-published routing configuration', verifiedAt: now, weight: 0 })
   }
