@@ -1,4 +1,11 @@
 import type { AuditEvent, DemoState, Department, FeedbackItem, Proposal, ProposalStatus, User } from './types'
+import { canReviewProposal } from './security'
+
+interface WorkflowContext { users?: User[]; fallbackReviewerIds?: string[] }
+
+const assertReviewAccess = (proposal: Proposal, actor: User, context: WorkflowContext = {}) => {
+  if (!canReviewProposal(actor, proposal, context.fallbackReviewerIds)) throw new Error('Actor is not authorized to review this proposal.')
+}
 
 export const appendAuditEvent = (events: readonly AuditEvent[], event: AuditEvent): AuditEvent[] => {
   if (events.some((item) => item.id === event.id)) return [...events]
@@ -11,7 +18,9 @@ export const transitionProposal = (
   actor: User,
   reason: string,
   timestamp = '2026-08-11T17:30:00Z',
+  context: WorkflowContext = {},
 ) => {
+  assertReviewAccess(proposal, actor, context)
   const updated: Proposal = {
     ...proposal,
     status,
@@ -50,7 +59,15 @@ export const transferProposal = (
   actor: User,
   reason: string,
   timestamp = '2026-08-11T17:30:00Z',
+  context: WorkflowContext = {},
 ) => {
+  assertReviewAccess(proposal, actor, context)
+  if (reviewerId) {
+    const reviewer = context.users?.find((user) => user.id === reviewerId)
+    if (!reviewer || !reviewer.active || !reviewer.roles.includes('approver') || !reviewer.departmentScopes.includes(primaryDepartment) || !reviewer.sensitivityAccess.includes(proposal.sensitivity ?? 'standard')) {
+      throw new Error('Target reviewer is not permission-eligible for the new primary department.')
+    }
+  }
   const updated: Proposal = {
     ...proposal,
     primaryDepartment,
@@ -80,7 +97,9 @@ export const addFeedback = (
   message: string,
   visibleToSubmitter: boolean,
   timestamp = '2026-08-11T17:30:00Z',
+  context: WorkflowContext = {},
 ) => {
+  assertReviewAccess(proposal, author, context)
   const feedback: FeedbackItem = { id: `${proposal.id}-feedback-${timestamp}`, authorId: author.id, message, visibleToSubmitter, createdAt: timestamp }
   const updated = { ...proposal, feedback: [...(proposal.feedback ?? []), feedback], updatedAt: timestamp.slice(0, 10) }
   const event: AuditEvent = {
