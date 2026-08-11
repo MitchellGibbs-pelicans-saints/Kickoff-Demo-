@@ -14,24 +14,32 @@ export const executiveProposals = (user: User, proposals: Proposal[]) => {
   return proposals.filter((proposal) => ['Approved', 'Pilot', 'Closed'].includes(proposal.status) && sensitivityAllowed(user, proposal.sensitivity) && routedDepartments(proposal).some((department) => user.executiveScopes.includes(department)))
 }
 
-export const approvalProposals = (user: User, proposals: Proposal[]) => {
+export const approvalProposals = (user: User, proposals: Proposal[], fallbackReviewerIds: string[] = []) => {
   const reviewStatuses = ['Assigned', 'Under review', 'Changes requested', 'Transferred', 'Human routing review']
   if (isRoleActive(user, 'admin')) return proposals.filter((proposal) => reviewStatuses.includes(proposal.status) && sensitivityAllowed(user, proposal.sensitivity))
   if (!isRoleActive(user, 'approver')) return []
-  return proposals.filter((proposal) => reviewStatuses.includes(proposal.status) && sensitivityAllowed(user, proposal.sensitivity) && (
-    proposal.responsibleReviewerId === user.id || routedDepartments(proposal).some((department) => user.departmentScopes.includes(department))
-  ))
+  return proposals.filter((proposal) => {
+    if (!reviewStatuses.includes(proposal.status) || !sensitivityAllowed(user, proposal.sensitivity)) return false
+    if (proposal.status === 'Human routing review') return fallbackReviewerIds.includes(user.id)
+    return proposal.responsibleReviewerId === user.id || routedDepartments(proposal).some((department) => user.departmentScopes.includes(department))
+  })
 }
 
-export const canViewProposal = (user: User, proposal: Proposal) => user.active && sensitivityAllowed(user, proposal.sensitivity) && (
-  proposal.submitterId === user.id ||
+export const canReviewProposal = (user: User, proposal: Proposal, fallbackReviewerIds: string[] = []) => user.active && sensitivityAllowed(user, proposal.sensitivity) && (
   isRoleActive(user, 'admin') ||
-  (isRoleActive(user, 'approver') && (proposal.responsibleReviewerId === user.id || routedDepartments(proposal).some((department) => user.departmentScopes.includes(department)))) ||
+  (proposal.status === 'Human routing review'
+    ? fallbackReviewerIds.includes(user.id)
+    : isRoleActive(user, 'approver') && (proposal.responsibleReviewerId === user.id || routedDepartments(proposal).some((department) => user.departmentScopes.includes(department))))
+)
+
+export const canViewProposal = (user: User, proposal: Proposal, fallbackReviewerIds: string[] = []) => user.active && sensitivityAllowed(user, proposal.sensitivity) && (
+  proposal.submitterId === user.id ||
+  canReviewProposal(user, proposal, fallbackReviewerIds) ||
   (isRoleActive(user, 'executive') && ['Approved', 'Pilot', 'Closed'].includes(proposal.status) && routedDepartments(proposal).some((department) => user.executiveScopes.includes(department)))
 )
 
-export const visibleFeedback = (user: User, proposal: Proposal): FeedbackItem[] => {
-  if (!canViewProposal(user, proposal)) return []
+export const visibleFeedback = (user: User, proposal: Proposal, fallbackReviewerIds: string[] = []): FeedbackItem[] => {
+  if (!canViewProposal(user, proposal, fallbackReviewerIds)) return []
   if (proposal.submitterId === user.id && !isRoleActive(user, 'admin')) return (proposal.feedback ?? []).filter((item) => item.visibleToSubmitter)
   return proposal.feedback ?? []
 }
