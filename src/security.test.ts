@@ -19,9 +19,16 @@ describe('demo authorization', () => {
 
   it('shows approvers only permission-compatible assigned work', () => {
     const approver = seedUsers.find((user) => user.id === 'u3')!
-    expect(approvalProposals(approver, seedProposals).map((proposal) => proposal.id)).toEqual(['p2', 'p4'])
+    expect(approvalProposals(approver, seedProposals, ['u1']).map((proposal) => proposal.id)).toEqual(['p2'])
     const restrictedWithoutPermission: typeof approver = { ...approver, sensitivityAccess: ['standard'] }
     expect(approvalProposals(restrictedWithoutPermission, seedProposals).map((proposal) => proposal.id)).not.toContain('p2')
+  })
+
+  it('keeps human-review work with configured fallback reviewers', () => {
+    const admin = seedUsers.find((user) => user.id === 'u1')!
+    const approver = seedUsers.find((user) => user.id === 'u3')!
+    expect(approvalProposals(admin, seedProposals, ['u1']).map((proposal) => proposal.id)).toContain('p4')
+    expect(approvalProposals(approver, seedProposals, ['u1']).map((proposal) => proposal.id)).not.toContain('p4')
   })
 
   it('limits submitters to visible feedback and their own proposal', () => {
