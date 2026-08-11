@@ -6,7 +6,7 @@ A standalone, static demonstration of Kickoff, an internal idea launchpad that h
 
 - Guided employee idea intake with summary confirmation and focused routing questions
 - Preliminary proposal generation with routing, Business Impact Score, feasibility, pilot, roadmaps, and analytics metadata
-- Configurable, evidence-based routing across department remits, verified responsibilities and skills, proposal subjects, cross-department dependencies, permissions, and confidence
+- Configurable, evidence-based routing across department remits, verified responsibilities and skills, proposal subjects, cross-department dependencies, permissions, confidence, and ambiguity thresholds
 - Exactly one evidence-supported primary department when available, collaborating departments, a permission-eligible responsible reviewer, and human-review fallback without forced assignments
 - Employee-visible controlled status, next action, reviewer questions, permission-safe feedback, and assignment history
 - Append-only routing, assignment, transfer, permission, feedback, and status audit events
@@ -50,7 +50,7 @@ For a new repository, open **Settings → Pages → Build and deployment → Sou
 
 ## Routing model
 
-The static demo permission-filters reviewer candidates before ranking them. It scores administrator-maintained department remits and subjects together with fresh responsibility and skill evidence, supported collaborators, and versioned routing weights. A recommendation below the configured confidence threshold, a missing permission-compatible reviewer, stale evidence, or absent department evidence moves the proposal to the human-routing queue. The demo never silently substitutes a department or employee.
+The static demo permission-filters reviewer candidates before ranking them. It scores administrator-maintained department remits and subjects together with fresh responsibility and skill evidence, supported collaborators, and versioned routing weights. A low-confidence or ambiguous recommendation, missing reviewer-fit evidence, a permission mismatch, stale evidence, or absent department evidence leaves the primary department and responsible reviewer unassigned and moves the proposal to the configured human-routing queue. The strongest candidate remains visible as a suggestion for the authorized fallback reviewer; the demo never silently substitutes a department or employee.
 
 Admins can simulate remit, threshold, fallback, and rule-version changes in the browser. Every change appends an audit event. These controls demonstrate the intended experience only; production configuration, permissions, queues, notifications, audit retention, and enforcement require trusted backend services.
 
