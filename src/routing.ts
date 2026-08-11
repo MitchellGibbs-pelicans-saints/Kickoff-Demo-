@@ -1,47 +1,78 @@
-import type { Department } from './types'
+import type { Department, EvidenceItem, RoutingConfig, RoutingDecision, Sensitivity, User } from './types'
 
-type RoutingRule = { department: Department; terms: string[] }
+const words = (value: string) => value.toLowerCase().match(/[a-z0-9]+/g) ?? []
+const normalized = (value: string) => ` ${words(value).join(' ')} `
+const matches = (text: string, phrase: string) => normalized(text).includes(` ${words(phrase).join(' ')} `)
 
-const rules: RoutingRule[] = [
-  { department: 'Ticketing and Sales', terms: ['ticket', 'seat', 'admission', 'inventory', 'pricing', 'discount', 'member'] },
-  { department: 'Marketing', terms: ['campaign', 'promot', 'awareness', 'email', 'social', 'advertis', 'content', 'guest guide'] },
-  { department: 'Partnerships', terms: ['sponsor', 'partner', 'brand', 'vendor', 'university', 'outside organization', 'artist'] },
-  { department: 'People Operations', terms: ['employee', 'staff morale', 'recognition', 'retention', 'workplace', 'shift feedback'] },
-  { department: 'Operations', terms: ['game day', 'game-day', 'venue', 'security', 'staffing', 'entry', 'gate', 'logistics', 'concourse', 'credential'] },
-  { department: 'Technology', terms: ['website', 'app', 'system', 'automation', 'mobile', 'digital', 'integration', 'identity', 'data'] },
-  { department: 'Business Intelligence', terms: ['report', 'dashboard', 'analytics', 'metric', 'forecast', 'measurement', 'digest'] },
-  { department: 'Finance', terms: ['revenue', 'cost', 'budget', 'financial', 'savings', 'forecast', 'invoice'] },
-]
+const reviewerCanSee = (user: User, department: Department, sensitivity: Sensitivity) =>
+  user.active && user.roles.includes('approver') && user.departmentScopes.includes(department) && user.sensitivityAccess.includes(sensitivity)
 
-const stemTerms = new Set(['promot', 'advertis'])
-const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-const matchesTerm = (text: string, term: string) => {
-  const suffix = stemTerms.has(term) ? '\\w*' : '(?:s|es)?'
-  return new RegExp(`(^|\\W)${escapePattern(term)}${suffix}(?=$|\\W)`).test(text)
+const isFresh = (verifiedAt: string, now: string, staleAfterDays: number) => {
+  const age = (Date.parse(now) - Date.parse(verifiedAt)) / 86_400_000
+  return Number.isFinite(age) && age <= staleAfterDays
 }
 
-export interface RoutingRecommendation {
-  primary: Department
-  supporting: Department[]
-  confidence: 'High confidence' | 'Moderate confidence' | 'Requires verification'
-  signals: string[]
-}
+export function routeIdea(
+  text: string,
+  config: RoutingConfig,
+  users: User[],
+  sensitivity: Sensitivity = 'standard',
+  now = '2026-08-11T17:30:00Z',
+): RoutingDecision {
+  const scored = config.departments.filter((item) => item.active).map((department) => {
+    const subjectSignals = department.subjects.filter((term) => matches(text, term))
+    const dependencySignals = department.dependencySubjects.filter((term) => matches(text, term))
+    const remitSignals = words(department.remit).filter((term) => term.length > 5 && matches(text, term))
+    const permitted = users.filter((user) => reviewerCanSee(user, department.department, sensitivity))
+    const fresh = permitted.filter((user) => isFresh(user.evidenceVerifiedAt, now, config.staleAfterDays))
+    const reviewerScores = fresh.map((user) => {
+      const responsibilities = user.responsibilities.filter((term) => matches(text, term))
+      const skills = user.skills.filter((term) => matches(text, term))
+      return { user, responsibilities, skills, score: responsibilities.length * config.weights.responsibility + skills.length * config.weights.skill }
+    }).sort((a, b) => b.score - a.score || a.user.name.localeCompare(b.user.name))
+    const reviewer = reviewerScores[0]
+    const score = Math.min(100,
+      subjectSignals.length * config.weights.subject +
+      Math.min(remitSignals.length, 1) * config.weights.remit +
+      dependencySignals.length * config.weights.dependency +
+      (reviewer?.score ?? 0),
+    )
+    return { department, permitted, fresh, reviewer, subjectSignals, dependencySignals, remitSignals, score }
+  }).sort((a, b) => b.score - a.score || a.department.department.localeCompare(b.department.department))
 
-export function routeIdea(text: string): RoutingRecommendation {
-  const normalized = text.toLowerCase()
-  const scored = rules.map((rule, order) => {
-    const signals = rule.terms.filter((term) => matchesTerm(normalized, term))
-    return { department: rule.department, score: signals.length, signals, order }
-  }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score || a.order - b.order)
+  const best = scored[0]
+  const hasDepartmentEvidence = Boolean(best && best.score > 0)
+  const confident = Boolean(best && best.score >= config.confidenceThreshold && best.reviewer)
+  const primaryDepartment = hasDepartmentEvidence ? best.department.department : null
+  const collaboratingDepartments = scored
+    .filter((candidate) => candidate !== best && candidate.score >= config.collaboratorThreshold)
+    .slice(0, 3)
+    .map((candidate) => candidate.department.department)
+  const evidence: EvidenceItem[] = []
 
-  if (!scored.length) return { primary: 'Operations', supporting: ['Technology'], confidence: 'Requires verification', signals: [] }
-  const primary = scored[0]
-  const supporting = scored.slice(1, 4).map((item) => item.department)
-  if (!supporting.length && primary.department !== 'Business Intelligence') supporting.push('Business Intelligence')
+  if (best) {
+    best.subjectSignals.forEach((label, index) => evidence.push({ id: `subject-${index}`, kind: 'subject', label, source: `${best.department.department} subject catalog`, verifiedAt: now, weight: config.weights.subject }))
+    if (best.remitSignals.length) evidence.push({ id: 'remit-0', kind: 'remit', label: best.department.remit, source: 'Administrator-maintained department remit', verifiedAt: now, weight: config.weights.remit })
+    best.reviewer?.responsibilities.forEach((label, index) => evidence.push({ id: `responsibility-${index}`, kind: 'responsibility', label, source: `${best.reviewer.user.name} responsibility evidence`, verifiedAt: best.reviewer.user.evidenceVerifiedAt, weight: config.weights.responsibility }))
+    best.reviewer?.skills.forEach((label, index) => evidence.push({ id: `skill-${index}`, kind: 'skill', label, source: `${best.reviewer.user.name} skill evidence`, verifiedAt: best.reviewer.user.evidenceVerifiedAt, weight: config.weights.skill }))
+    collaboratingDepartments.forEach((label, index) => evidence.push({ id: `dependency-${index}`, kind: 'dependency', label, source: 'Cross-department dependency score', verifiedAt: now, weight: config.weights.dependency }))
+  }
+
+  const uncertainty: string[] = []
+  if (!hasDepartmentEvidence) uncertainty.push('No department remit or proposal-subject evidence met the minimum signal level.')
+  if (best && !best.permitted.length) uncertainty.push(`No active reviewer is permission-eligible for ${sensitivity} ${best.department.department} proposals.`)
+  if (best && best.permitted.length && !best.fresh.length) uncertainty.push('Available reviewer evidence is stale and requires administrator validation.')
+  if (best && best.score < config.confidenceThreshold) uncertainty.push(`Confidence ${best.score} is below the configured threshold of ${config.confidenceThreshold}.`)
+
   return {
-    primary: primary.department,
-    supporting,
-    confidence: primary.score > 1 ? 'High confidence' : 'Moderate confidence',
-    signals: scored.flatMap((item) => item.signals).slice(0, 6),
+    primaryDepartment,
+    collaboratingDepartments,
+    responsibleReviewerId: confident ? best?.reviewer?.user.id ?? null : null,
+    reviewQueue: confident ? null : config.humanReviewQueue,
+    confidence: best?.score ?? 0,
+    evidence,
+    uncertainty,
+    ruleVersion: config.version,
+    decidedAt: now,
   }
 }
