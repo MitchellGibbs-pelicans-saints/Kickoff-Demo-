@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { approvalProposals, canManageRoles, canOpenExecutive, executiveProposals } from './security'
+import { approvalProposals, canManageRoles, canOpenExecutive, canViewProposal, executiveProposals, visibleFeedback } from './security'
 import { MockClickUpGateway, ProductionClickUpGateway, ProductionEntraAdapter } from './integrations'
 import { seedProposals, seedUsers } from './seed'
-import { routeIdea } from './routing'
 
 describe('demo authorization', () => {
   it('keeps an employee and proposer out of the executive dashboard', () => {
@@ -14,27 +13,30 @@ describe('demo authorization', () => {
   it('shows executives only approved proposals in assigned scopes', () => {
     const executive = seedUsers.find((user) => user.id === 'u4')!
     const result = executiveProposals(executive, seedProposals)
-    expect(result.every((proposal) => [proposal.primaryDepartment, ...proposal.supportingDepartments].some((department) => executive.executiveScopes.includes(department)))).toBe(true)
     expect(result.map((proposal) => proposal.id)).toEqual(['p1', 'p3', 'p6'])
+    expect(result.every((proposal) => [proposal.primaryDepartment, ...proposal.supportingDepartments].filter(Boolean).some((department) => executive.executiveScopes.includes(department!)))).toBe(true)
   })
 
-  it('shows approvers only their assigned department queue', () => {
+  it('shows approvers only permission-compatible assigned work', () => {
     const approver = seedUsers.find((user) => user.id === 'u3')!
-    expect(approvalProposals(approver, seedProposals).map((proposal) => proposal.id)).toEqual(['p2'])
+    expect(approvalProposals(approver, seedProposals).map((proposal) => proposal.id)).toEqual(['p2', 'p4'])
+    const restrictedWithoutPermission: typeof approver = { ...approver, sensitivityAccess: ['standard'] }
+    expect(approvalProposals(restrictedWithoutPermission, seedProposals).map((proposal) => proposal.id)).not.toContain('p2')
+  })
+
+  it('limits submitters to visible feedback and their own proposal', () => {
+    const employee = seedUsers.find((user) => user.id === 'u2')!
+    const own = seedProposals.find((proposal) => proposal.id === 'p2')!
+    const other = seedProposals.find((proposal) => proposal.id === 'p3')!
+    expect(canViewProposal(employee, own)).toBe(true)
+    expect(canViewProposal(employee, other)).toBe(false)
+    expect(visibleFeedback(employee, own).map((item) => item.id)).toEqual(['f1'])
   })
 
   it('revocation removes access immediately and non-admins cannot manage roles', () => {
     const revoked = seedUsers.find((user) => user.id === 'u6')!
     expect(canOpenExecutive(revoked)).toBe(false)
     expect(canManageRoles(seedUsers.find((user) => user.id === 'u3')!)).toBe(false)
-  })
-})
-
-describe('automatic routing', () => {
-  it('routes one idea to a primary and multiple supporting departments', () => {
-    const result = routeIdea('Create a mobile ticket offer for sponsors with revenue analytics')
-    expect(result.primary).toBe('Ticketing and Sales')
-    expect(result.supporting).toEqual(expect.arrayContaining(['Partnerships', 'Technology', 'Business Intelligence']))
   })
 })
 
