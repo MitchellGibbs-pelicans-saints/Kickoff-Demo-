@@ -30,7 +30,7 @@ export function routeIdea(
       const skills = user.skills.filter((term) => matches(text, term))
       return { user, responsibilities, skills, score: responsibilities.length * config.weights.responsibility + skills.length * config.weights.skill }
     }).sort((a, b) => b.score - a.score || a.user.name.localeCompare(b.user.name))
-    const reviewer = reviewerScores[0]
+    const reviewer = reviewerScores.find((candidate) => candidate.score > 0)
     const score = Math.min(100,
       subjectSignals.length * config.weights.subject +
       Math.min(remitSignals.length, 1) * config.weights.remit +
@@ -41,11 +41,14 @@ export function routeIdea(
   }).sort((a, b) => b.score - a.score || a.department.department.localeCompare(b.department.department))
 
   const best = scored[0]
+  const runnerUp = scored[1]
   const hasDepartmentEvidence = Boolean(best && best.score > 0)
-  const confident = Boolean(best && best.score >= config.confidenceThreshold && best.reviewer)
-  const primaryDepartment = hasDepartmentEvidence ? best.department.department : null
+  const ambiguous = Boolean(best && runnerUp && runnerUp.score > 0 && best.score - runnerUp.score < config.ambiguityMargin)
+  const confident = Boolean(best && best.score >= config.confidenceThreshold && best.reviewer && !ambiguous)
+  const suggestedPrimaryDepartment = hasDepartmentEvidence ? best.department.department : null
+  const primaryDepartment = confident ? best.department.department : null
   const collaboratingDepartments = scored
-    .filter((candidate) => candidate !== best && candidate.score >= config.collaboratorThreshold)
+    .filter((candidate) => candidate !== best && candidate.score >= config.collaboratorThreshold && (candidate.subjectSignals.length > 0 || candidate.dependencySignals.length > 0))
     .slice(0, 3)
     .map((candidate) => candidate.department.department)
   const evidence: EvidenceItem[] = []
@@ -55,16 +58,21 @@ export function routeIdea(
     if (best.remitSignals.length) evidence.push({ id: 'remit-0', kind: 'remit', label: best.department.remit, source: 'Administrator-maintained department remit', verifiedAt: now, weight: config.weights.remit })
     best.reviewer?.responsibilities.forEach((label, index) => evidence.push({ id: `responsibility-${index}`, kind: 'responsibility', label, source: `${best.reviewer.user.name} responsibility evidence`, verifiedAt: best.reviewer.user.evidenceVerifiedAt, weight: config.weights.responsibility }))
     best.reviewer?.skills.forEach((label, index) => evidence.push({ id: `skill-${index}`, kind: 'skill', label, source: `${best.reviewer.user.name} skill evidence`, verifiedAt: best.reviewer.user.evidenceVerifiedAt, weight: config.weights.skill }))
+    if (best.reviewer) evidence.push({ id: 'permission-0', kind: 'permission', label: `${best.reviewer.user.name} passed active-role, department-scope and sensitivity checks`, source: 'Server-verified authorization context (simulated)', verifiedAt: now, weight: 0 })
     collaboratingDepartments.forEach((label, index) => evidence.push({ id: `dependency-${index}`, kind: 'dependency', label, source: 'Cross-department dependency score', verifiedAt: now, weight: config.weights.dependency }))
+    evidence.push({ id: 'rule-0', kind: 'rule', label: config.version, source: 'Administrator-published routing configuration', verifiedAt: now, weight: 0 })
   }
 
   const uncertainty: string[] = []
   if (!hasDepartmentEvidence) uncertainty.push('No department remit or proposal-subject evidence met the minimum signal level.')
   if (best && !best.permitted.length) uncertainty.push(`No active reviewer is permission-eligible for ${sensitivity} ${best.department.department} proposals.`)
   if (best && best.permitted.length && !best.fresh.length) uncertainty.push('Available reviewer evidence is stale and requires administrator validation.')
+  if (best && best.fresh.length && !best.reviewer) uncertainty.push('No permission-eligible reviewer has matching responsibility or skill evidence.')
   if (best && best.score < config.confidenceThreshold) uncertainty.push(`Confidence ${best.score} is below the configured threshold of ${config.confidenceThreshold}.`)
+  if (ambiguous && runnerUp) uncertainty.push(`${best?.department.department} and ${runnerUp.department.department} are within the configured ${config.ambiguityMargin}-point ambiguity margin.`)
 
   return {
+    suggestedPrimaryDepartment,
     primaryDepartment,
     collaboratingDepartments,
     responsibleReviewerId: confident ? best?.reviewer?.user.id ?? null : null,
