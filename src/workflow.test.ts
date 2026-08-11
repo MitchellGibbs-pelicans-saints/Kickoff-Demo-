@@ -25,11 +25,11 @@ describe('routing workflow and audit history', () => {
   })
 
   it('allows an authorized admin to transfer to a valid reviewer', () => {
-    const result = transferProposal(proposal, 'Partnerships', ['Marketing'], 'u5', admin, 'Ownership corrected.', '2026-08-11T17:31:00Z', { users: seedUsers, fallbackReviewerIds: routingConfig.fallbackReviewerIds })
-    expect(result.proposal.primaryDepartment).toBe('Partnerships')
-    expect(result.proposal.responsibleReviewerId).toBe('u5')
+    const result = transferProposal(proposal, 'Technology', ['Operations'], 'u3', admin, 'Ownership corrected.', '2026-08-11T17:31:00Z', { users: seedUsers, fallbackReviewerIds: routingConfig.fallbackReviewerIds })
+    expect(result.proposal.primaryDepartment).toBe('Technology')
+    expect(result.proposal.responsibleReviewerId).toBe('u3')
     expect(result.event.primaryBefore).toBe('Operations')
-    expect(result.event.primaryAfter).toBe('Partnerships')
+    expect(result.event.primaryAfter).toBe('Technology')
   })
 
   it('keeps reviewer-only feedback hidden through an auditable visibility decision', () => {
