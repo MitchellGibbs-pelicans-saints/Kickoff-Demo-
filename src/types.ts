@@ -43,6 +43,7 @@ export interface RoutingWeights {
 export interface RoutingConfig {
   version: string
   confidenceThreshold: number
+  ambiguityMargin: number
   collaboratorThreshold: number
   staleAfterDays: number
   humanReviewQueue: string
@@ -67,6 +68,7 @@ export interface User {
 }
 
 export interface RoutingDecision {
+  suggestedPrimaryDepartment: Department | null
   primaryDepartment: Department | null
   collaboratingDepartments: Department[]
   responsibleReviewerId: string | null
