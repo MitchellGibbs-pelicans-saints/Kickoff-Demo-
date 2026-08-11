@@ -6,14 +6,18 @@ A standalone, static demonstration of Kickoff, an internal idea launchpad that h
 
 - Guided employee idea intake with summary confirmation and focused routing questions
 - Preliminary proposal generation with routing, Business Impact Score, feasibility, pilot, roadmaps, and analytics metadata
-- Automatic primary and supporting department routing inferred from idea context, separate from submitter department
+- Configurable, evidence-based routing across department remits, verified responsibilities and skills, proposal subjects, cross-department dependencies, permissions, and confidence
+- Exactly one evidence-supported primary department when available, collaborating departments, a permission-eligible responsible reviewer, and human-review fallback without forced assignments
+- Employee-visible controlled status, next action, reviewer questions, permission-safe feedback, and assignment history
+- Append-only routing, assignment, transfer, permission, feedback, and status audit events
 - Approval-stage histories with entered/completed dates, elapsed time, outcomes, and fictional assigned reviewers
 - Department approval queues filtered by assigned department scope
 - Executive dashboards filtered to approved proposals in assigned scopes
 - Executive analytics for ideas created by submitter department, ideas received by routed department, and average approval-stage timing
-- Admin role assignment, access revocation, department routing, and mock audit history
+- Admin role assignment, access revocation, department remits, routing thresholds, rule versions, fallback configuration, and immutable mock audit history
 - Persona switching, browser-persisted state, and a reset-demo control
 - Clearly labeled simulated Microsoft Entra ID and ClickUp integrations
+- Routing, workflow, permission, feedback, transfer, stale-review, duplicate-event, and integration-boundary tests
 
 All people, proposals, departments, metrics, and integration events in this demo are fictional or illustrative. The static application does not contain credentials and does not connect to company systems.
 
@@ -44,13 +48,20 @@ For a new repository, open **Settings → Pages → Build and deployment → Sou
 
 `https://mitchellgibbs-pelicans-saints.github.io/Kickoff-Demo-/`
 
+## Routing model
+
+The static demo permission-filters reviewer candidates before ranking them. It scores administrator-maintained department remits and subjects together with fresh responsibility and skill evidence, supported collaborators, and versioned routing weights. A recommendation below the configured confidence threshold, a missing permission-compatible reviewer, stale evidence, or absent department evidence moves the proposal to the human-routing queue. The demo never silently substitutes a department or employee.
+
+Admins can simulate remit, threshold, fallback, and rule-version changes in the browser. Every change appends an audit event. These controls demonstrate the intended experience only; production configuration, permissions, queues, notifications, audit retention, and enforcement require trusted backend services.
+
 ## Demo personas
 
-- Adrian Sanchez Jr: Motion Graphics Associate
-- Victoria Boldis: Manager of Consumer Insights and Analytics
-- James Title: Senior Director of Video Production
-- Gayle Benson: mock initial admin
-- Mitch Gibbs: revoked executive demonstrating immediate access loss
+- Mitch Gibbs: mock initial admin and human-routing fallback
+- Avery Laurent: employee and proposal submitter
+- Rowan Price: permission-scoped Operations and Technology reviewer
+- Jordan Marchand: scoped executive
+- Riley Patel: permission-scoped Partnerships and Marketing reviewer
+- Cameron Ellis: revoked executive demonstrating immediate access loss
 
 ## Production security boundary
 
